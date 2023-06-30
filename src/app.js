@@ -41,7 +41,7 @@ app.post('/participants', async (req, res) => {
   }
 
   try {
-    const UserName = await db.collection("participants").find({ name: name })
+    const UserName = await db.collection("participants").findOne({ name: name })
     if (UserName) return res.sendStatus(409)
     await db.collection("participants").insertOne({ name: name, lastStatus: Date.now() })
     await db.collection("messages").insertOne({ from: name, to: 'Todos', text: 'entra na sala...', type: 'status', time: dayjs().format('HH:mm:ss') })
