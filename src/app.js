@@ -65,7 +65,7 @@ app.post('/messages', async (req, res) => {
   const userSchema = joi.object({
     to: joi.string().required(),
     text: joi.string().required(),
-    type: joi.string().required().allow('message', 'private_message')
+    type: joi.any().allow("message", "private_message").only().required()
   })
   const validacao = userSchema.validate(req.body)
   if (validacao.error) {
