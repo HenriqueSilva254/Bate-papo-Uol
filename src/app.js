@@ -129,5 +129,5 @@ setInterval(async () => {
   await db.collection("messages").insertOne({ from: nameDelete, to: 'Todos', text: 'sai da sala...', type: 'status', time: dayjs().format('HH:mm:ss')})
   await db.collection("participants").deleteMany({ lastStatus: {$gt: tempoInativo}})
 
-}, 3000)
+}, 15000)
 
