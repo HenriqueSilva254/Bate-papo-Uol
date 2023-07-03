@@ -36,7 +36,7 @@ app.post('/participants', async (req, res) => {
   })
   const validacao = userSchema.validate(req.body)
   if (validacao.error) {
-    const errors = validation.error.details.map((detail) => detail.message);
+    const errors = validacao.error.details.map((detail) => detail.message);
     return res.status(422).send(errors);
   }
 
@@ -47,7 +47,7 @@ app.post('/participants', async (req, res) => {
     await db.collection("messages").insertOne({ from: name, to: 'Todos', text: 'entra na sala...', type: 'status', time: dayjs().format('HH:mm:ss') })
     res.sendStatus(201)
   } catch (err) {
-    res.status(500).send(err.message)
+    res.status(422).send(err.message)
   }
 });
 
@@ -72,11 +72,33 @@ app.post('/messages', async (req, res) => {
 app.get('/messages', async (req, res) => {
   const { to, text, type } = req.body
   const { user } = req.headers
-  const { limite } = req.query
+  const { limit } = req.query
+  
+  const userSchema = joi.object({
+    limit: joi.number().integer().min(1)
+  })
+  const validacao = userSchema.validate(req.query)
+  if (validacao.error) {
+    const errors = validacao.error.details.map((detail) => detail.message);
+    return res.sendStatus(422);
+  } 
+  
   try {
     const promisse = await db.collection("messages").find({ $or: [{ to: "Todos" }, { to: user }, { from: user }] }).toArray()
-    res.send(promisse.slice(-(Number(limite))))
+    res.send(promisse.slice(-(Number(limit))))
   } catch (err) {
     res.send(err)
+  }
+});
+
+app.post('/status', async (req, res) => {
+  const { user } = req.headers
+  if(user) return res.sendStatus(404)
+  try {
+    const name = await db.collection("status").findOne({ user: user})
+    if (name) return  res.sendStatus(404)
+    res.sendStatus(201)
+  } catch (err) {
+    res.sendStatus(404)
   }
 });
