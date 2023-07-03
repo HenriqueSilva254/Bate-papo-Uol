@@ -1,7 +1,7 @@
 import express, { json } from 'express'
 import cors from 'cors'
 import dotenv from "dotenv";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import dayjs from "dayjs";
 import joi from "joi"
 
@@ -65,13 +65,14 @@ app.post('/messages', async (req, res) => {
   const userSchema = joi.object({
     to: joi.string().required(),
     text: joi.string().required(),
-    type: joi.string().required()
+    type: joi.string().required().allow('message', 'private_message')
   })
   const validacao = userSchema.validate(req.body)
-  if (validacao.error || user === undefined) {
+  if (validacao.error) {
     const errors = validacao.error.details.map((detail) => detail.message);
     return res.status(422).send(errors);
   }
+  if(user === undefined) return res.sendStatus(422);
 
   try {
     const promisse = await db.collection("participants").findOne({ name: user}) 
@@ -124,10 +125,16 @@ app.post('/status', async (req, res) => {
 setInterval(async () => {
   const tempoInativo = Date.now() - 10000
   let nameDelete = ""
+  let idDelete = 0
   await db.collection("participants").findOne({lastStatus: {$lt: tempoInativo}}) 
-  .then((res) => nameDelete = res.name )
+  .then((res) => { 
+    if(res !== null){
+      nameDelete = res.name 
+      idDelete = res._id
+    } 
+  })
   await db.collection("messages").insertOne({ from: nameDelete, to: 'Todos', text: 'sai da sala...', type: 'status', time: dayjs().format('HH:mm:ss')})
-  await db.collection("participants").deleteMany({ lastStatus: {$gt: tempoInativo}})
+  await db.collection("participants").deleteOne({ _id: new ObjectId(idDelete)})
 
 }, 15000)
 
