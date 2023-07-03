@@ -55,6 +55,7 @@ app.get('/participants', (req, res) => {
   db.collection("participants").find({}).toArray()
     .then((name) => res.send(name))
     .catch((err) => res.status(500).send(err.message))
+  
 });
 
 app.post('/messages', async (req, res) => {
@@ -104,7 +105,7 @@ app.get('/messages', async (req, res) => {
   }
 });
 
-app.put('/status', async (req, res) => {
+app.post('/status', async (req, res) => {
   const { user } = req.headers
   //const newUser = {name: user, }
   //if(!user) return res.sendStatus(404)
@@ -117,4 +118,16 @@ app.put('/status', async (req, res) => {
   } catch (err) {
     res.sendStatus(404)
   }
+
 });
+
+setInterval(async () => {
+  const tempoInativo = Date.now() - 10000
+  let nameDelete = ""
+  await db.collection("participants").findOne({lastStatus: {$lt: tempoInativo}}) 
+  .then((res) => nameDelete = res.name )
+  await db.collection("messages").insertOne({ from: nameDelete, to: 'Todos', text: 'sai da sala...', type: 'status', time: dayjs().format('HH:mm:ss')})
+  await db.collection("participants").deleteMany({ lastStatus: {$gt: tempoInativo}})
+
+}, 3000)
+
